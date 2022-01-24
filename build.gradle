@@ -1,0 +1,84 @@
+buildscript {
+    repositories {
+        maven { url = 'https://files.minecraftforge.net/maven' }
+        jcenter()
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
+    }
+}
+apply plugin: 'net.minecraftforge.gradle'
+// Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
+
+version = "${mod_version}"
+group = "unaverage.${mod_id}"
+archivesBaseName = "${mod_name}"
+
+minecraft {
+    mappings channel: "${mappings_channel}", version: "${mappings_version}"
+
+    runs {
+        client {
+            workingDirectory project.file('run')
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                no_xp {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        server {
+            workingDirectory project.file('run')
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                no_xp {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        serverTest {
+            parent runs.server // This run config inherits settings from the server config
+            workingDirectory project.file('run')
+            main 'com.alcatrazescapee.mcjunitlib.DedicatedTestServerLauncher' // The main class which launches a customized server which then runs JUnit tests
+            ideaModule "${project.name}.test" // Tell IDEA to use the classpath of the test module
+            property 'forge.logging.console.level', 'unittest' // This logging level prevents any other server information messages and leaves only the test output
+            environment 'target', 'fmltestserver' // This is a custom service used to launch with ModLauncher's transforming class loader
+            environment 'targetModId', "${mod_id}" // Pass the mod ID directly to mcjunitlib, to find integration test classes from the mod annotation scan data
+            arg '--crashOnFailedTests' // Optional. Recommended when running in an automated environment. Without it, the server will continue running (and can be connected to via localhost) to inspect why tests failed.
+            forceExit = false // Optional. Recommended when running in an automated environment, or via the console rather than run configurations. This will allow the task to pass successfully when all tests pass. Use if you see errors along the lines of 'Gradle daemon disappeared unexpectedly'.
+            mods {
+                no_xp {
+                    sources sourceSets.main, sourceSets.test
+                }
+            }
+        }
+    }
+}
+
+repositories{
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${mc_version}-${forge_version}"
+    testImplementation fg.deobf("com.github.alcatrazEscapee:mcjunitlib:${mcjunitlib_version}-${mc_version}")
+}
+
+jar {
+    manifest {
+        attributes([
+                "Specification-Title": "${mod_id}",
+                "Specification-Vendor": "unaverage",
+                "Specification-Version": "1", // We are version 1 of ourselves
+                "Implementation-Title": project.name,
+                "Implementation-Version": "${version}",
+                "Implementation-Vendor" :"unaverage",
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+}
